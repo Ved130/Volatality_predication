@@ -1,0 +1,18 @@
+# Environment
+backend/venv/
+frontend/node_modules/
+
+# Model files — too large for GitHub
+backend/data/*.ckpt
+backend/data/*.parquet
+
+# Secrets
+backend/.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/

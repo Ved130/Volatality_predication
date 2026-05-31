@@ -1,0 +1,7 @@
+{
+  "Q_FINAL": 0.0600091328876608,
+  "coverage_achieved": 0.8302154195011338,
+  "quantile_used": 0.75,
+  "MAX_ENCODER_LENGTH": 60,
+  "MAX_PREDICTION_LENGTH": 5
+}
