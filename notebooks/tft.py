@@ -353,7 +353,7 @@ def conformal_calibration(val_output, val_index, actuals_arr, p50_arr, df):
     config = {
         "Q_FINAL":              float(Q_FINAL),
         "coverage_achieved":    float(final_coverage),
-        "quantile_used":        0.75,
+        "quantile_used":        0.80,
         "MAX_ENCODER_LENGTH":   MAX_ENCODER_LENGTH,
         "MAX_PREDICTION_LENGTH":MAX_PREDICTION_LENGTH,
     }
