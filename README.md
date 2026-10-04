@@ -34,17 +34,18 @@ Each day's forecast uses only information available before that day, and all mod
 - The TFT target is realised volatility shifted 5 days ahead. Because past target values enter the encoder, the model is effectively a short-horizon forecaster.
 - Next steps: Student-t VaR for fatter tails, and the Christoffersen test for clustered breaches.
 
-## Notebooks
-- `notebooks/Project_volatility.ipynb`: early exploration (GARCH on a single stock)
-- `notebooks/TFT.ipynb`: TFT training, evaluation and conformal calibration
+## Repository structure
 - `notebooks/Volatility_prediction.ipynb`: data download, feature engineering, baseline models
-- `notebooks/data`: 
-- `notebooks/lightning_logs`: 
-- `notebooks/tft.py`: 
-- `notebooks/volatility_prediction.py`: 
+- `notebooks/TFT_with_VaR.ipynb`: TFT training and evaluation, conformal calibration, and the 1-day VaR backtest (Kupiec test). Main results are here.
+- `notebooks/volatility_prediction.py`, `notebooks/tft.py`: script versions of the pipeline that produce the files the app loads
+- `backend/`: FastAPI service with endpoints for tickers, GARCH and TFT forecasts, and a Claude-powered chat about the forecasts
+- `frontend/`: React (Vite) dashboard with a ticker selector, forecast chart and chat panel
 
-## Tech stack
+## Running the app
+The trained checkpoint and data files are not committed (too large). Run `volatility_prediction.py` then `tft.py` to generate them, copy them into `backend/data/`, and set `ANTHROPIC_API_KEY` in `backend/.env`. Then:
+
+    cd backend && pip install -r requirements.txt && uvicorn main:app --reload
+    cd frontend && npm install && npm run dev
 pandas, yfinance, arch (GARCH), pytorch-forecasting (TFT), PyTorch Lightning, scipy
 
-## Author
-Ved Pashine
+
