@@ -1,9 +1,3 @@
-# =============================================================================
-# tft.py
-# TFT model training, evaluation, and conformal calibration
-# Run AFTER volatility_prediction.py has produced features.parquet
-# =============================================================================
-
 import os
 import json
 import warnings
@@ -21,9 +15,7 @@ from pytorch_forecasting import TemporalFusionTransformer, TimeSeriesDataSet
 from pytorch_forecasting.data import GroupNormalizer
 from pytorch_forecasting.metrics import QuantileLoss
 
-# =============================================================================
-# CONFIG
-# =============================================================================
+
 
 DATA_DIR = Path(__file__).parent / "data"
 
@@ -34,17 +26,12 @@ MAX_PREDICTION_LENGTH = 5
 BATCH_SIZE            = 128
 
 
-# =============================================================================
-# HELPERS
-# =============================================================================
 
 def rmse(a, p): return round(np.sqrt(mean_squared_error(a, p)), 4)
 def mae(a, p):  return round(mean_absolute_error(a, p), 4)
 
 
-# =============================================================================
-# STEP 1 — Load features
-# =============================================================================
+
 
 def load_data():
     path = DATA_DIR / "features.parquet"
@@ -58,9 +45,7 @@ def load_data():
     return df
 
 
-# =============================================================================
-# STEP 2 — Prepare splits and build TimeSeriesDataSet
-# =============================================================================
+
 
 def prepare_datasets(df):
     # String categoricals required by TFT
@@ -124,9 +109,7 @@ def prepare_datasets(df):
     return training, validation, testing, df
 
 
-# =============================================================================
-# STEP 3 — Create dataloaders
-# =============================================================================
+
 
 def make_loaders(training, validation, testing):
     # num_workers=0 on Windows to avoid multiprocessing issues
@@ -150,9 +133,7 @@ def make_loaders(training, validation, testing):
     return train_loader, val_loader, test_loader
 
 
-# =============================================================================
-# STEP 4 — Define and train TFT
-# =============================================================================
+
 
 def train_model(training, train_loader, val_loader):
     print(f"GPU available: {torch.cuda.is_available()}")
@@ -204,9 +185,7 @@ def train_model(training, train_loader, val_loader):
     return trainer
 
 
-# =============================================================================
-# STEP 5 — Load best checkpoint and generate predictions
-# =============================================================================
+
 
 def load_and_predict(test_loader, val_loader):
     ckpt_path = DATA_DIR / "tft_best.ckpt"
@@ -237,9 +216,6 @@ def load_and_predict(test_loader, val_loader):
     return best_model, pred_output, pred_index, val_output, val_index
 
 
-# =============================================================================
-# STEP 6 — Match predictions to actuals
-# =============================================================================
 
 def match_predictions(pred_output, pred_index, df):
     p10 = pred_output[:, :, 0].numpy()
@@ -282,9 +258,6 @@ def match_predictions(pred_output, pred_index, df):
     return actuals_arr, p50_arr, p10_arr, p90_arr, coverage, avg_width, p50, p10, p90
 
 
-# =============================================================================
-# STEP 7 — Final comparison table
-# =============================================================================
 
 def print_comparison_table(actuals_arr, p50_arr, coverage):
     baseline_path = DATA_DIR / "baseline_results.parquet"
@@ -328,9 +301,7 @@ def print_comparison_table(actuals_arr, p50_arr, coverage):
     print(f"TFT Coverage (p10-p90): {coverage:.1%}")
 
 
-# =============================================================================
-# STEP 8 — Conformal calibration
-# =============================================================================
+
 
 def conformal_calibration(val_output, val_index, actuals_arr, p50_arr, df):
     val_p50      = val_output[:, :, 1]
@@ -362,17 +333,9 @@ def conformal_calibration(val_output, val_index, actuals_arr, p50_arr, df):
     print(f"\nVal samples:             {len(residuals):,}")
     print(f"Mean residual:           {residuals.mean():.4f}")
 
-    # Find quantile closest to 80% coverage on test set
-    print("\nSearching for optimal conformal quantile...")
-    for target_q in [0.72, 0.74, 0.75, 0.76, 0.77]:
-        Q_test    = np.quantile(residuals, target_q)
-        conf_lo   = np.clip(p50_arr - Q_test, 0, None)
-        conf_hi   = p50_arr + Q_test
-        cov       = np.mean((actuals_arr >= conf_lo) & (actuals_arr <= conf_hi))
-        print(f"  quantile={target_q}  Q={Q_test:.4f}  coverage={cov:.1%}")
+ 
 
-    # Lock in 0.75 — gives ~79.9% coverage
-    Q_FINAL         = np.quantile(residuals, 0.75)
+    Q_FINAL         = np.quantile(residuals, 0.80)
     conformal_lower = np.clip(p50_arr - Q_FINAL, 0, None)
     conformal_upper = p50_arr + Q_FINAL
 
