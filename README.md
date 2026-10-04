@@ -1,51 +1,50 @@
-# Volatility Forecasting with TFT and GARCH
+# Volatility Forecasting and VaR Backtesting (S&P 500)
 
-machine learning project that forecasts stock market volatility using Temporal Fusion Transformer (TFT) and GARCH(1,1) models across 50 S&P 500 stocks.
+Forecasts volatility for 50 large S&P 500 stocks (2018-2024) using EWMA, GARCH(1,1) and a Temporal Fusion Transformer (TFT), then tests each model as a 1-day Value-at-Risk (VaR) model.
 
+## Data
+- 50 large-cap S&P 500 stocks plus the VIX index, from Yahoo Finance (yfinance), 2018-2024
+- Features: log returns, 20-day realised volatility, lagged volatility, EWMA volatility, volume ratio, VIX, sector, calendar encodings
+- Split: train 2018-2021, validation 2022, test 2023-2024
+
+## Models
+Random walk, historical average, EWMA, GARCH(1,1), and a TFT (60-day lookback, p10/p50/p90 quantile outputs, trained jointly across all 50 stocks).
 
 ## Results
 
-| Model | RMSE | MAE | Coverage |
-|---|---|---|---|
-| Random Walk | 0.0240 | 0.0107 | — |
-| Historical Average | 0.0795 | 0.0602 | — |
-| EWMA | 0.0373 | 0.0269 | — |
-| GARCH(1,1) | 0.0751 | 0.0558 | — |
-| TFT (p50) | 0.0602 | 0.0394 | 76.9% |
-| TFT + Conformal | 0.0602 | 0.0394 | 79.9% |
+### 1-day VaR backtest (2023-2024, Kupiec POF test at 5% significance)
 
-TFT outperforms GARCH(1,1) on both RMSE and MAE. Conformal prediction calibration corrects the uncertainty intervals from 76.9% to 79.9% coverage against a nominal 80% target.
+| Model | 95% VaR breach rate | 95% stocks passing | 99% VaR breach rate | 99% stocks passing |
+|---|---|---|---|---|
+| EWMA | 5.06% | 49/50 | 2.17% | 21/50 |
+| GARCH(1,1) | 3.48% | 31/50 | 1.29% | 45/50 |
+| TFT (p50) | 5.13% | 49/50 | 2.24% | 19/50 |
 
-## Project Structure
-## What This Project Does
+Each day's forecast uses only information available before that day, and all models are scored on the same stock-days. VaR assumes normally distributed returns with zero mean.
 
-### Problem
-Predicting how much a stock price will move over the next 5 trading days — used for options pricing, risk management, and portfolio construction.
+- TFT and EWMA are well calibrated at 95% but breach about twice as often as expected at 99%, consistent with fat-tailed returns.
+- GARCH(1,1) is the most reliable at 99% but too conservative at 95% (too few breaches also fails the Kupiec test).
 
-### Approach
-Five models compared in order of complexity:
-1. Random Walk
-2. Historical Average
-3. EWMA (RiskMetrics)
-4. GARCH(1,1)
-5. Temporal Fusion Transformer
+### Interval calibration
+- TFT p10-p90 coverage on the test set: 76.9% (target 80%)
+- After split conformal calibration on 2022 validation residuals: 84.6%
 
-### Why TFT over GARCH
-GARCH only uses a single stock return history. TFT additionally uses VIX, volume ratio, lag volatility, EWMA, cyclic time encodings, and static per-ticker features (sector, market cap). TFT learns these jointly across all 50 stocks.
+## Known limitations and next steps
+- The RMSE table in the baseline notebook is not like-for-like: the baselines are scored on same-day realised volatility from 2022, the TFT on 5-day-ahead volatility from 2023, and the GARCH baseline there reuses its forecast between refits. The VaR backtest above corrects all three.
+- The TFT target is realised volatility shifted 5 days ahead. Because past target values enter the encoder, the model is effectively a short-horizon forecaster.
+- Next steps: Student-t VaR for fatter tails, and the Christoffersen test for clustered breaches.
 
-### Uncertainty Quantification
-TFT outputs p10/p50/p90 quantiles directly. Conformal prediction calibration on the validation set corrects interval width to achieve 79.9% coverage on the test set against a nominal 80% target.
+## Notebooks
+- `notebooks/Project_volatility.ipynb`: early exploration (GARCH on a single stock)
+- `notebooks/TFT.ipynb`: TFT training, evaluation and conformal calibration
+- `notebooks/Volatility_prediction.ipynb`: data download, feature engineering, baseline models
+- `notebooks/data`: 
+- `notebooks/lightning_logs`: 
+- `notebooks/tft.py`: 
+- `notebooks/volatility_prediction.py`: 
 
-## Data
-- **Universe**: 50 S&P 500 stocks
-- **Period**: 2018-2024
-- **Source**: Yahoo Finance via yfinance
-- **Target**: 20-day realized volatility shifted forward 5 days
-- **Split**: Train 2018-2021 | Val 2022 | Test 2023-2024
-
-## Tech Stack
-- **Data**: yfinance, pandas, pyarrow
-- **Models**: arch (GARCH), pytorch-forecasting (TFT), pytorch-lightning
+## Tech stack
+pandas, yfinance, arch (GARCH), pytorch-forecasting (TFT), PyTorch Lightning, scipy
 
 ## Author
 Ved Pashine
