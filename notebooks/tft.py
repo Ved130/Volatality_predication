@@ -51,7 +51,7 @@ def prepare_datasets(df):
     # String categoricals required by TFT
     df["ticker"]     = df["ticker"].astype(str)
     df["sector"]     = df["sector"].astype(str).fillna("Unknown")
-    df["cap_bucket"] = df["cap_bucket"].astype(str)
+    df["liquidity_bucket"] = df["liquidity_bucket"].astype(str)
 
     # Chronological split — never shuffle time series data
     df["split"] = "test"
@@ -69,7 +69,7 @@ def prepare_datasets(df):
         group_ids             = ["ticker"],
         max_encoder_length    = MAX_ENCODER_LENGTH,
         max_prediction_length = MAX_PREDICTION_LENGTH,
-        static_categoricals   = ["sector", "cap_bucket"],
+        static_categoricals   = ["sector", "liquidity_bucket"],
         static_reals          = [],
         time_varying_known_reals = [
             "time_idx",

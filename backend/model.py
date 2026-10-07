@@ -35,7 +35,7 @@ def get_model_and_dataset():
     df = load_features()
     df["ticker"]     = df["ticker"].astype(str)
     df["sector"]     = df["sector"].astype(str).fillna("Unknown")
-    df["cap_bucket"] = df["cap_bucket"].astype(str)
+    df["liquidity_bucket"] = df["liquidity_bucket"].astype(str)
 
     train_df = df[df["date"] <= "2021-12-31"].copy()
 
@@ -46,7 +46,7 @@ def get_model_and_dataset():
         group_ids             = ["ticker"],
         max_encoder_length    = MAX_ENCODER_LENGTH,
         max_prediction_length = MAX_PREDICTION_LENGTH,
-        static_categoricals   = ["sector", "cap_bucket"],
+        static_categoricals   = ["sector", "liquidity_bucket"],
         static_reals          = [],
         time_varying_known_reals = [
             "time_idx",
@@ -89,7 +89,7 @@ def run_tft_forecast(ticker: str, horizon: int = 5) -> dict:
     df = load_features()
     df["ticker"]     = df["ticker"].astype(str)
     df["sector"]     = df["sector"].astype(str).fillna("Unknown")
-    df["cap_bucket"] = df["cap_bucket"].astype(str)
+    df["liquidity_bucket"] = df["liquidity_bucket"].astype(str)
 
     tkr = df[df["ticker"] == ticker].sort_values("date").reset_index(drop=True)
 
