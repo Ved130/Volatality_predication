@@ -15,4 +15,5 @@ __pycache__/
 *.pyo
 
 # Jupyter
-.ipynb_checkpoints/
+.ipynb_checkpoints/.venv/ 
+*.patch 
