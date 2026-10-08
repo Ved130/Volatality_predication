@@ -17,3 +17,8 @@ __pycache__/
 # Jupyter
 .ipynb_checkpoints/.venv/ 
 *.patch 
+
+.venv/
+*.patch
+notebooks/data/
+lightning_logs/
