@@ -168,10 +168,17 @@ def compute_features(df, vix_raw):
     df = df.merge(vix, on="date", how="left")
     df["vix"] = df["vix"].ffill()
 
-    # Cap bucket — static covariate for TFT
-    avg_price  = df.groupby("ticker")["close"].mean()
-    bucket_map = pd.cut(avg_price, bins=3, labels=["small", "mid", "large"]).to_dict()
-    df["cap_bucket"] = df["ticker"].map(bucket_map)
+    # Liquidity bucket — static covariate for TFT
+    # Average daily dollar volume (close x volume), computed on the TRAINING
+    # period only (<= 2021-12-31) so no information from validation/test leaks in.
+    # pd.qcut splits the 50 stocks into three equal-sized groups.
+    # (Replaces the old cap_bucket, which used average share price over the
+    # full sample: price is not market cap, and the full-sample mean leaked.)
+    train_mask   = df["date"] <= "2021-12-31"
+    dollar_vol   = (df.loc[train_mask, "close"] * df.loc[train_mask, "volume"])
+    avg_dollar   = dollar_vol.groupby(df.loc[train_mask, "ticker"]).mean()
+    bucket_map   = pd.qcut(avg_dollar, q=3, labels=["low", "mid", "high"]).to_dict()
+    df["liquidity_bucket"] = df["ticker"].map(bucket_map).astype(str)
 
     # time_idx — required by pytorch-forecasting
     df["time_idx"] = df.groupby("ticker").cumcount()
